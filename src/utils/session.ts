@@ -9,6 +9,21 @@ export const SESSION_ABORT_TIMEOUT_MS = 1_000;
 
 export const SESSION_ID_PATTERN = /^ses_[A-Za-z0-9_-]+$/;
 
+export const SESSION_KIND_METADATA_KEY = 'oh-my-opencode-slim.kind';
+export const SMARTFETCH_SECONDARY_SESSION_KIND = 'smartfetch-secondary';
+
+export function isSmartfetchSecondarySession(info: {
+  metadata?: unknown;
+}): boolean {
+  const metadata = info.metadata;
+  return (
+    typeof metadata === 'object' &&
+    metadata !== null &&
+    (metadata as Record<string, unknown>)[SESSION_KIND_METADATA_KEY] ===
+      SMARTFETCH_SECONDARY_SESSION_KIND
+  );
+}
+
 export class OperationTimeoutError extends Error {
   constructor(message: string) {
     super(message);

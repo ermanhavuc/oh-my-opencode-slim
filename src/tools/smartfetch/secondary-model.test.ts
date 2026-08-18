@@ -79,6 +79,30 @@ describe('smartfetch/secondary-model', () => {
     mock.restore();
   });
 
+  test('creates a tagged child session for the calling session', async () => {
+    mockV2Client = createV2ClientMock([{ text: 'Useful answer' }]);
+
+    await runSecondaryModelWithFallback(
+      testInput,
+      [models[0]],
+      'Summarize the page',
+      'This is enough fetched content to clear the short-content guard.',
+      'parent-session',
+    );
+
+    expect(mockV2Session.create).toHaveBeenCalledWith({
+      query: { directory: '/tmp/project' },
+      body: {
+        title: 'smartfetch-secondary',
+        parentID: 'parent-session',
+        metadata: {
+          'oh-my-opencode-slim.kind': 'smartfetch-secondary',
+        },
+      },
+      throwOnError: true,
+    });
+  });
+
   test('falls back when the first model returns empty text', async () => {
     mockV2Client = createV2ClientMock([
       { text: '   ' },
@@ -90,6 +114,7 @@ describe('smartfetch/secondary-model', () => {
       models,
       'Summarize the page',
       'This is enough fetched content to clear the short-content guard.',
+      'parent-session',
     );
 
     expect(result.text).toBe('Useful answer');
@@ -109,6 +134,7 @@ describe('smartfetch/secondary-model', () => {
       models,
       'Extract the answer',
       'This is enough fetched content to clear the short-content guard.',
+      'parent-session',
     );
 
     expect(result.text).toBe('Recovered answer');
@@ -131,6 +157,7 @@ describe('smartfetch/secondary-model', () => {
         [models[0]],
         'Summarize',
         'This is enough fetched content to clear the short-content guard.',
+        'parent-session',
       );
 
       expect(result.text).toBe('Answer');
@@ -159,6 +186,7 @@ describe('smartfetch/secondary-model', () => {
         [models[0]],
         'Summarize',
         'This is enough fetched content to clear the short-content guard.',
+        'parent-session',
       );
 
       // Secondary model still succeeds despite cleanup failure
@@ -202,6 +230,7 @@ describe('smartfetch/secondary-model', () => {
       models,
       'Summarize',
       'This is enough fetched content to clear the short-content guard.',
+      'parent-session',
     );
 
     expect(result.text).toBe('Fallback answer');
@@ -252,6 +281,7 @@ describe('smartfetch/secondary-model', () => {
           [models[0]],
           'Summarize',
           'This is enough fetched content to clear the short-content guard.',
+          'parent-session',
         ),
       ).rejects.toThrow('Secondary model timed out');
 
@@ -323,6 +353,7 @@ describe('smartfetch/secondary-model', () => {
           [models[0]],
           'Summarize',
           'This is enough fetched content to clear the short-content guard.',
+          'parent-session',
         ),
       ).rejects.toThrow('Secondary model timed out');
 
@@ -336,6 +367,7 @@ describe('smartfetch/secondary-model', () => {
           [models[0]],
           'Summarize again',
           'This is enough fetched content to clear the short-content guard.',
+          'parent-session',
         ),
       ).rejects.toThrow('cleanup is still pending');
 
@@ -352,6 +384,7 @@ describe('smartfetch/secondary-model', () => {
         [models[0]],
         'Summarize after cleanup',
         'This is enough fetched content to clear the short-content guard.',
+        'parent-session',
       );
       expect(recovered.text).toBe('Recovered answer');
       expect(mockV2Session.create).toHaveBeenCalledTimes(2);

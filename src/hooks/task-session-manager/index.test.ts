@@ -5993,6 +5993,38 @@ describe('task-session-manager hook', () => {
     });
   });
 
+  test('session.created ignores tagged smartfetch helper sessions', async () => {
+    const board = new BackgroundJobBoard();
+    const { hook } = createHook({ backgroundJobBoard: board });
+
+    await hook['tool.execute.before'](
+      { tool: 'task', sessionID: 'parent-1', callID: 'call-1' },
+      {
+        args: {
+          subagent_type: 'oracle',
+          description: 'review helper isolation',
+        },
+      },
+    );
+
+    await hook.event({
+      event: {
+        type: 'session.created',
+        properties: {
+          info: {
+            id: 'smartfetch-helper',
+            parentID: 'parent-1',
+            metadata: {
+              'oh-my-opencode-slim.kind': 'smartfetch-secondary',
+            },
+          },
+        },
+      },
+    });
+
+    expect(board.get('smartfetch-helper')).toBeUndefined();
+  });
+
   test('session.created early registration attributes each parallel child to its own pending call', async () => {
     // Regression: when a parent launches several task tools in parallel with
     // different subagent types (e.g. council reviewers a/b/c), the old

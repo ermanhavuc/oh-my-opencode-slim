@@ -1,6 +1,10 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import { getClient } from '../../utils/opencode-client';
-import { abortSessionWithTimeout } from '../../utils/session';
+import {
+  abortSessionWithTimeout,
+  SESSION_KIND_METADATA_KEY,
+  SMARTFETCH_SECONDARY_SESSION_KIND,
+} from '../../utils/session';
 import { MAX_MODEL_CONTENT_CHARS } from './constants';
 import type { CachedFetch, SecondaryModel } from './types';
 
@@ -204,6 +208,7 @@ async function runSecondaryModel(
   model: SecondaryModel,
   prompt: string,
   content: string,
+  parentSessionID: string,
 ) {
   const client = getClient(input);
   const directory = input.directory;
@@ -213,9 +218,16 @@ async function runSecondaryModel(
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   let promptTimedOut = false;
   try {
+    const sessionBody = {
+      title: SMARTFETCH_SECONDARY_SESSION_KIND,
+      parentID: parentSessionID,
+      metadata: {
+        [SESSION_KIND_METADATA_KEY]: SMARTFETCH_SECONDARY_SESSION_KIND,
+      },
+    };
     const sessionResponse = await client.session.create({
       query: { directory },
-      body: { title: 'smartfetch-secondary' },
+      body: sessionBody,
       throwOnError: true,
     });
 
@@ -326,11 +338,18 @@ export async function runSecondaryModelWithFallback(
   models: SecondaryModel[],
   prompt: string,
   content: string,
+  parentSessionID: string,
 ) {
   let lastError: unknown;
   for (const model of models) {
     try {
-      const result = await runSecondaryModel(input, model, prompt, content);
+      const result = await runSecondaryModel(
+        input,
+        model,
+        prompt,
+        content,
+        parentSessionID,
+      );
       if (!isUsableSecondaryText(result.text)) {
         lastError = new Error('Secondary model returned no usable text');
         continue;

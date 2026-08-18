@@ -11,6 +11,7 @@ import {
 import type { BackgroundJobState } from '../utils/background-job-board';
 import type { BackgroundJobStore } from '../utils/background-job-store';
 import { log } from '../utils/logger';
+import { isSmartfetchSecondarySession } from '../utils/session';
 import {
   CmuxSessionLifecycle,
   type CmuxSessionLifecycleOptions,
@@ -63,6 +64,7 @@ interface SessionEvent {
       title?: string;
       directory?: string;
       sessionID?: string;
+      metadata?: Record<string, unknown>;
     };
     part?: { sessionID?: string };
     sessionID?: string;
@@ -263,11 +265,11 @@ export class MultiplexerSessionManager {
   }
 
   async onSessionCreated(event: SessionEvent): Promise<void> {
+    if (event.type !== 'session.created') return;
+    const info = event.properties?.info;
+    if (info && isSmartfetchSecondarySession(info)) return;
     if (this.cmuxLifecycle) return this.cmuxLifecycle.onSessionCreated(event);
     if (!this.enabled || !this.multiplexer) return;
-    if (event.type !== 'session.created') return;
-
-    const info = event.properties?.info;
     if (!info?.id || !info?.parentID) return;
 
     const sessionId = info.id;

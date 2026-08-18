@@ -9,6 +9,7 @@ import type { BackgroundJobExecution } from '../../utils/background-job-board';
 import type { BackgroundJobStore } from '../../utils/background-job-store';
 import type { BackgroundJobSupervisor } from '../../utils/background-job-supervisor';
 import { log } from '../../utils/logger';
+import { isSmartfetchSecondarySession } from '../../utils/session';
 import {
   isFailoverError,
   isInlineFailoverError,
@@ -206,6 +207,7 @@ export async function handleEvent(
           activityAt?: number;
           timestamp?: number;
           time?: { updated?: number };
+          metadata?: Record<string, unknown>;
         };
         id?: string;
         requestID?: string;
@@ -300,6 +302,7 @@ export async function handleEvent(
 
   if (input.event.type === 'session.created') {
     const info = input.event.properties?.info;
+    if (info && isSmartfetchSecondarySession(info)) return;
     if (info?.id) deps.retainedBoardSnapshots.delete(info.id);
     if (info?.id) {
       rememberSessionGeneration(deps.backgroundJobBoard, info.id);

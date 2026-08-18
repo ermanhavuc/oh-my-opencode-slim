@@ -176,6 +176,30 @@ describe('MultiplexerSessionManager', () => {
       expect(mockMultiplexer.spawnPane).not.toHaveBeenCalled();
     });
 
+    test('ignores tagged smartfetch helper sessions', async () => {
+      const ctx = createMockContext();
+      const manager = new MultiplexerSessionManager(
+        ctx,
+        defaultMultiplexerConfig,
+      );
+
+      await manager.onSessionCreated({
+        type: 'session.created',
+        properties: {
+          info: {
+            id: 'smartfetch-helper',
+            parentID: 'parent-session',
+            title: 'smartfetch-secondary',
+            metadata: {
+              'oh-my-opencode-slim.kind': 'smartfetch-secondary',
+            },
+          },
+        },
+      });
+
+      expect(mockMultiplexer.spawnPane).not.toHaveBeenCalled();
+    });
+
     test('prefers child session directory when present', async () => {
       const ctx = createMockContext({ directory: '/parent/directory' });
       const manager = new MultiplexerSessionManager(

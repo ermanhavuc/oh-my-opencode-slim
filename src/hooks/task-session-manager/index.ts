@@ -492,7 +492,12 @@ export function createTaskSessionManagerHook(
       event: {
         type: string;
         properties?: {
-          info?: { id?: string; parentID?: string; agent?: string };
+          info?: {
+            id?: string;
+            parentID?: string;
+            agent?: string;
+            metadata?: Record<string, unknown>;
+          };
           id?: string;
           requestID?: string;
           sessionID?: string;
